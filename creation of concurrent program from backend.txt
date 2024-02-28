@@ -1,0 +1,225 @@
+CODE TO CREATE CONCURRENT PROGRAM FROM backend
+
+DECLARE  
+  --
+  l_program                  VARCHAR2 (200);
+  l_application              VARCHAR2 (200);
+  l_enabled                  VARCHAR2 (200);
+  l_short_name               VARCHAR2 (200);
+  l_short_name               VARCHAR2 (200);
+  l_description              VARCHAR2 (200);
+  l_executable_short_name    VARCHAR2 (200);
+  l_executable_application   VARCHAR2 (200);
+  l_execution_options        VARCHAR2 (200);
+  l_priority                 NUMBER;
+  l_save_output              VARCHAR2 (200);
+  l_print                    VARCHAR2 (200);
+  l_cols                     NUMBER;
+  l_rows                     NUMBER;
+  l_style                    VARCHAR2 (200);
+  l_style_required           VARCHAR2 (200);
+  l_printer                  VARCHAR2 (200);
+  l_request_type             VARCHAR2 (200);
+  l_request_type_application VARCHAR2 (200);
+  l_use_in_srs               VARCHAR2 (200);
+  l_allow_disabled_values    VARCHAR2 (200);
+  l_run_alone                VARCHAR2 (200);
+  l_output_type              VARCHAR2 (200);
+  l_enable_trace             VARCHAR2 (200);
+  l_restart                  VARCHAR2 (200);
+  l_nls_compliant            VARCHAR2 (200);
+  l_icon_name                VARCHAR2 (200);
+  l_language_code            VARCHAR2 (200);
+  l_mls_function_short_name  VARCHAR2 (200);
+  l_mls_function_application VARCHAR2 (200);
+  l_incrementor              VARCHAR2 (200);
+  l_refresh_portlet          VARCHAR2 (200);
+  l_check                    VARCHAR2 (2);
+  --
+BEGIN
+  --
+  l_program                  := 'Concurrent program from backend by Deepanshu Shukla to check no of parameters';
+  l_application              := 'PO';
+  l_enabled                  := 'Y';
+  l_short_name               := 'XXINTGNOPDS';
+  l_description              := 'TEST CONC 1';
+  l_executable_short_name    := 'XXINTGDS_TEST_INS';
+  l_executable_application   := 'PO';
+  l_execution_options        := NULL;
+  l_priority                 := NULL;
+  l_save_output              := 'Y';
+  l_print                    := 'Y';
+  l_cols                     := NULL;
+  l_rows                     := NULL;
+  l_style                    := NULL;
+  l_style_required           := 'N';
+  l_printer                  := NULL;
+  l_request_type             := NULL;
+  l_request_type_application := NULL;
+  l_use_in_srs               := 'Y';
+  l_allow_disabled_values    := 'N';
+  l_run_alone                := 'N';
+  l_output_type              := 'TEXT';
+  l_enable_trace             := 'N';
+  l_restart                  := 'Y';
+  l_nls_compliant            := 'Y';
+  l_icon_name                := NULL;
+  l_language_code            := 'US';
+  l_mls_function_short_name  := NULL;
+  l_mls_function_application := NULL;
+  l_incrementor              := NULL;
+  l_refresh_portlet          := NULL;
+ --
+ --Calling API to create concurrent program definition
+ --
+ apps.fnd_program.register
+        (program                       => l_program,
+         application                   => l_application,
+         enabled                       => l_enabled,
+         short_name                    => l_short_name,
+         description                   => l_description,
+         executable_short_name         => l_executable_short_name,
+         executable_application        => l_executable_application,
+         execution_options             => l_execution_options,
+         priority                      => l_priority,
+         save_output                   => l_save_output,
+         print                         => l_print,
+         cols                          => l_cols,
+         ROWS                          => l_rows,
+         STYLE                         => l_style,
+         style_required                => l_style_required,
+         printer                       => l_printer,
+         request_type                  => l_request_type,
+         request_type_application      => l_request_type_application,
+         use_in_srs                    => l_use_in_srs,
+         allow_disabled_values         => l_allow_disabled_values,
+         run_alone                     => l_run_alone,
+         output_type                   => l_output_type,
+         enable_trace                  => l_enable_trace,
+         restart                       => l_restart,
+         nls_compliant                 => l_nls_compliant,
+         icon_name                     => l_icon_name,
+         language_code                 => l_language_code,
+         mls_function_short_name       => l_mls_function_short_name,
+         mls_function_application      => l_mls_function_application,
+         incrementor                   => l_incrementor,
+         refresh_portlet               => l_refresh_portlet
+         );  
+  --
+  COMMIT;
+  --
+  BEGIN
+  --
+   --To check whether Concurrent Program is registered or not
+   --
+     SELECT 'Y'
+       INTO l_check
+       FROM fnd_concurrent_programs
+      WHERE concurrent_program_name = 'XXINTGNOPDS';
+       --
+       DBMS_OUTPUT.put_line ('Concurrent Program Registered Successfully');
+       --
+  EXCEPTION
+  WHEN NO_DATA_FOUND THEN
+    DBMS_OUTPUT.put_line ('Concurrent Program Registration Failed');
+  END;
+END;
+
+
+
+
+
+---CODE TO ADD PARAMETERS IN CONCURRENT PROGRAM
+
+DECLARE
+  --
+  l_program_short_name      VARCHAR2 (200);
+  l_application             VARCHAR2 (200);
+  l_sequence                NUMBER;
+  l_parameter               VARCHAR2 (200);
+  l_description             VARCHAR2 (200);
+  l_enabled                 VARCHAR2 (200);
+  l_value_set               VARCHAR2 (200);
+  l_default_type            VARCHAR2 (200);
+  l_default_value           VARCHAR2 (200);
+  l_required                VARCHAR2 (200);
+  l_enable_security         VARCHAR2 (200);
+  l_range                   VARCHAR2 (200);
+  l_display                 VARCHAR2 (200);
+  l_display_size            NUMBER;
+  l_description_size        NUMBER;
+  l_concatenated_descr_size NUMBER;
+  l_prompt                  VARCHAR2 (200);
+  l_token                   VARCHAR2 (200);
+  l_cd_parameter            VARCHAR2 (200);
+  l_check                   VARCHAR2 (2);
+  --
+BEGIN
+  --
+  l_program_short_name      := 'XXINTGNOPDS';
+  l_application             := 'PO';
+  l_sequence                := 10;
+  l_parameter               := 'Employee Name';
+  l_description             := 'Employee Name';
+  l_enabled                 := 'Y';
+  l_value_set               := '240 Characters';
+  l_default_type            := NULL;
+  l_default_value           := NULL;
+  l_required                := 'N';
+  l_enable_security         := 'N';
+  l_range                   := NULL;
+  l_display                 := 'Y';
+  l_display_size            := 50;
+  l_description_size        := 50;
+  l_concatenated_descr_size := 50;
+  l_prompt                  := 'Employee Name';
+  l_token                   := NULL;
+  l_cd_parameter            := NULL;
+  --
+  --Calling API to create a Parameter for a concurrent program definition
+  --
+  FOR I IN 1..100 LOOP
+   apps.fnd_program.parameter
+           (program_short_name                 => l_program_short_name,
+            application                        => l_application,
+            SEQUENCE                           => I,
+            parameter                          => l_parameter||' '||TO_CHAR(I),
+            description                        => l_description||' '||TO_CHAR(I),
+            enabled                            => l_enabled,
+            value_set                          => l_value_set,
+            default_type                       => l_default_type,
+            DEFAULT_VALUE                      => l_default_value,
+            required                           => l_required,
+            enable_security                    => l_enable_security,
+            RANGE                              => l_range,
+            display                            => l_display,
+            display_size                       => l_display_size,
+            description_size                   => l_description_size,
+            concatenated_description_size      => l_concatenated_descr_size,
+            prompt                             => l_prompt||' '||TO_CHAR(I),
+            token                              => l_token,
+            cd_parameter                       => l_cd_parameter
+           );  
+           END LOOP;
+  --
+  COMMIT;
+  --
+  BEGIN
+    --
+    --To check whether a parameter is assigned to a Concurrent Program or not
+    --
+     SELECT 'Y'
+       INTO l_check
+       FROM fnd_descr_flex_column_usages
+      WHERE descriptive_flexfield_name = '$SRS$.'
+      || 'XXINTGNOPDS'
+    AND end_user_column_name = 'Employee Name 1';
+    --
+    dbms_output.put_line ('Concurrent Program Parameter registered Successfully');
+    --
+  EXCEPTION
+  WHEN no_data_found THEN
+    dbms_output.put_line ('Concurrent Program Parameter Registration Failed');
+  END;
+  --
+END;

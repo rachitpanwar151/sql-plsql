@@ -1,0 +1,22 @@
+select name , con_id from v$pdbs;
+
+alter session set container = XEPDB1;
+
+select name ,open_mode from v$pdbs;
+
+alter user HR IDENTIFIED by apps ACCOUNT UNLOCK;
+
+
+
+connect or apps 
+
+
+DEV-APP-EBSDB=
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS=(PROTOCOL=TCP)(HOST=140.238.241.23)(PORT=1521))
+    )
+    (CONNECT_DATA=
+      (SID=EBSDB)
+    )
+  )

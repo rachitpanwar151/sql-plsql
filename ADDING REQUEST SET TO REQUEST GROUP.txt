@@ -1,0 +1,16 @@
+BEGIN
+  fnd_set.add_set_to_group (request_set       => 'XXINTG_REQ_SET2_DS',  -- Request Set Code
+                            set_application   => 'XXINTG',         -- Application Code Short Name
+                            request_group     => 'All Reports',  -- Request Group Name
+                            group_application => 'PO');        -- Application Code Short Name
+                            
+  dbms_output.put_line('Request Set has been attached to Request Group Successfully ');
+  COMMIT;
+EXCEPTION
+  WHEN DUP_VAL_ON_INDEX
+  THEN
+    dbms_output.put_line ('Request Set is already available in the Request group'); 
+  WHEN OTHERS
+  THEN
+    dbms_output.put_line ('Others Exception adding Request Set. ERROR:' || SQLERRM); 
+END;

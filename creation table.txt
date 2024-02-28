@@ -1,0 +1,45 @@
+CREATE TABLE MYTEST(
+      NAME VARCHAR2(100),
+      ID NUMBER,
+      ORDER_DATE DATE,
+      QTY NUMBER(4,2)
+      ) CREATE TABLE MYTEST(
+      NAME VARCHAR2(100),
+      ID NUMBER,
+      ORDER_DATE DATE,
+      QTY NUMBER(4,2)
+      )
+     alter table table_name 
+     add column_name datatype
+     alter table mytest
+     add price number;
+     alter table mytest
+     add ( cust_name varchar2(1000) , item varchar2(100) )
+      MAX COL = 1000
+      NAME = 128 
+      COL = 128 
+      NAME - NUMBER N SPEICAL CHAR  ,KEYWORDS 
+      alter column 
+      columns - 
+      modify exsting column
+            data type  
+               number --> varchar2 
+               number - date 
+               vchar - date 
+               vchar2 
+             incraee in size 
+             alter table mytest1 modify name date
+             alter table mytest modify ( name varchar2(2000) , CUST_NAME varchar2(2000))
+      drop col
+      alter table mytest drop column order_date;
+      add new column - single , multiple 
+      rename ext colum 
+      table 
+      rename table name 
+      INSERT INTO MYTEST 
+      VALUES ('Annnnnnnnnnnnnnnnnnnnnnnnnnjjjjjjjjjjjjjjjjjjjjjn',
+      2,SYSDATE,4.2,null,null,null)
+      SELECT * FROM MYTEST       
+      COMMIT;
+SELECT * FROM ALL_OBJECTS WHERE oBJECT_TYPE ='TABLE' and UPPER(object_name) ='MYTEST' OWNED BY USER + HAVE ACCESS USER_OBJECTS - OWNED BY CURRENT USER (ALL OBJECT TYPE) SELECT * FROM USER_TAB_COLS WHERE table_name LIKE  'MYTEST' 
+COLUMN_NAME ='DEPARTMENT_ID' SELECT * FROM USER_TAB_COLUMNS WHERE COLUMN_NAME ='DEPARTMENT_ID' TABLE_NAME = 'MYTEST' SELECT * FROM MYTEST
