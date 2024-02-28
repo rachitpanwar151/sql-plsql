@@ -70,7 +70,8 @@ AS
                         sold_from_org_name,
                         salesrep_name,
                         OIC_INTERFACE_ID,
-                        request_id
+                        request_id,
+                        STATUS
                     ) VALUES (
                         RECORD_HEADER.NEXTVAL,
                         p_so_HDR_in(indx).transactional_curr_code,
@@ -82,8 +83,9 @@ AS
                         p_so_HDR_in(indx).sold_from_org_name,
                         p_so_HDR_in(indx).salesrep_name,
                         p_so_HDR_in(indx).OIC_INTERFACE_ID,
-                        gn_request_id
-                    );
+                        gn_request_id,
+                         p_so_HDR_in(indx).STATUS
+                         );
 
                     COMMIT;
                 EXCEPTION
@@ -132,7 +134,8 @@ AS
                         OIC_INTERFACE_ID,
                         cancel_flag,
                         change_reason,
-                        request_id
+                        request_id,
+                        STATUS
                     ) VALUES (
                         RECORD_LINEE.NEXTVAL,
                         p_SO_LINE_IN_AWR(i).SF_ORDER_NUMBER,
@@ -143,7 +146,8 @@ AS
                         p_SO_LINE_IN_AWR(i).OIC_INTERFACE_ID,
                         p_SO_LINE_IN_AWR(i).cancel_flag,
                         p_SO_LINE_IN_AWR(i).change_reason,
-                        gn_request_id
+                        gn_request_id,
+                        p_SO_LINE_IN_AWR(i).STATUS
                     );
 
                     COMMIT;
@@ -170,32 +174,26 @@ AS
 
 
 
-
-
-
-
-
-    PROCEDURE update_LINE_details (
-        p_LINE_id IN NUMBER,
-        P_LINE_NUMBER IN NUMBER
-    ,P_HEADER_ID IN NUMBER
+      PROCEDURE update_order_cancel_LINES_details (
+        p_header_id IN NUMBER
     ) AS
     BEGIN
+    
+    
+    DBMS_OUTPUT.PUT_LINE('PROCESS STARTED TO UPDATE CANCEL LINES DETAILS');
 		/*****************************************************************************************
         PROCEDURE TO UPDATE ORDER NUMBER AND HEADER AND LINE ID AND ERRORS  ENCOUNTERED IN API
         *****************************************************************************************/
-
         BEGIN
             UPDATE XXAWR_STAGING_LINE_SO st2
             SET
-                ORDERED_QUANTITY = (
+                flow_status_code_LINE = (
                     SELECT DISTINCT
-                        ORDERED_QUANTITY
+                        flow_status_code
                     FROM
                         oe_order_lines_all oe
                     WHERE
-                            oe.LINE_ID = P_LINE_ID
-                            AND OE.LINE_NUMBER=P_LINE_NUMBER
+                            oe.header_id = p_header_id
                         AND oe.org_id = 204
                 )
             WHERE
@@ -205,10 +203,14 @@ AS
             COMMIT;
         EXCEPTION
             WHEN OTHERS THEN
-                dbms_output.put_line('CANNOT UPDATE BOOKING DETAILS IN HEADER STAING'||SQLCODE||SQLERRM);
+                dbms_output.put_line('CANNOT UPDATE LINE CANCEL DETAILS'||SQLCODE||SQLERRM);
         END;
 
-    END update_LINE_details;
+    END update_order_cancel_LINES_details;
+
+
+
+
 
 
       PROCEDURE update_order_cancel_details (
@@ -254,7 +256,8 @@ AS
                     WHERE
                             oe.header_id = p_header_id
                         AND oe.org_id = 204
-                )
+                ),
+                CANCEL_FLAG='Y'
             WHERE
                     st2.order_header_id = p_header_id
 --                AND st2.request_id = gn_request_id;
@@ -262,7 +265,7 @@ AS
             COMMIT;
         EXCEPTION
             WHEN OTHERS THEN
-                dbms_output.put_line('CANNOT UPDATE BOOKING DETAILS IN HEADER STAING'||SQLCODE||SQLERRM);
+                dbms_output.put_line('CANNOT UPDATE CANCEL ORDER DETAILS'||SQLCODE||SQLERRM);
         END;
 
     END update_order_cancel_details;
@@ -442,221 +445,161 @@ END LOOP;
     END update_order_create_details;
 
 
+PROCEDURE SALES_ORDER_CANCEL_LINES(P_OIC_INTERFACE_ID VARCHAR2)
+IS
+
+v_api_version_number           NUMBER  := 1;
+v_return_status                VARCHAR2 (2000);
+v_msg_count                    NUMBER;
+v_msg_data                     VARCHAR2 (2000);
+
+-- IN Variables --
+v_header_rec                   oe_order_pub.header_rec_type;
+v_line_tbl                     oe_order_pub.line_tbl_type;
+v_action_request_tbl           oe_order_pub.request_tbl_type;
+v_line_adj_tbl                 oe_order_pub.line_adj_tbl_type;
+
+-- OUT Variables --
+v_header_rec_out               oe_order_pub.header_rec_type;
+v_header_val_rec_out           oe_order_pub.header_val_rec_type;
+v_header_adj_tbl_out           oe_order_pub.header_adj_tbl_type;
+v_header_adj_val_tbl_out       oe_order_pub.header_adj_val_tbl_type;
+v_header_price_att_tbl_out     oe_order_pub.header_price_att_tbl_type;
+v_header_adj_att_tbl_out       oe_order_pub.header_adj_att_tbl_type;
+v_header_adj_assoc_tbl_out     oe_order_pub.header_adj_assoc_tbl_type;
+v_header_scredit_tbl_out       oe_order_pub.header_scredit_tbl_type;
+v_header_scredit_val_tbl_out   oe_order_pub.header_scredit_val_tbl_type;
+
+v_line_tbl_out                 oe_order_pub.line_tbl_type;
+
+v_line_val_tbl_out             oe_order_pub.line_val_tbl_type;
+v_line_adj_tbl_out             oe_order_pub.line_adj_tbl_type;
+v_line_adj_val_tbl_out         oe_order_pub.line_adj_val_tbl_type;
+v_line_price_att_tbl_out       oe_order_pub.line_price_att_tbl_type;
+v_line_adj_att_tbl_out         oe_order_pub.line_adj_att_tbl_type;
+v_line_adj_assoc_tbl_out       oe_order_pub.line_adj_assoc_tbl_type;
+v_line_scredit_tbl_out         oe_order_pub.line_scredit_tbl_type;
+v_line_scredit_val_tbl_out     oe_order_pub.line_scredit_val_tbl_type;
+v_lot_serial_tbl_out           oe_order_pub.lot_serial_tbl_type;
+v_lot_serial_val_tbl_out       oe_order_pub.lot_serial_val_tbl_type;
+v_action_request_tbl_out       oe_order_pub.request_tbl_type;
 
 
-    /*******************************************************************************************************************
-    * Program Name   : UPDATE_LINE_QUANTITY
-    * Language       : PL/SQL
-    * Description    : Procedure To UPDATE LINE QUANTITY IN Sales Order
-    * History        :
-    * WHO              WHAT                                                          WHEN
-    * --------------   -------------------------------------------------------       --------------
-    *                  Procedure To UPDATE LINE QUANTITY IN Sales Order                                 08-JAN-2024
-    *******************************************************************************************************************/
+CURSOR C_CANCEL_LINES 
+IS
+SELECT DISTINCT ORDER_HEADER_ID,LINE_ID,ordered_quantity,cancel_flag
+FROM XXAWR_STAGING_LINE_SO
+WHERE UPPER(cancel_flag)='Y'
+AND FLOW_STATUS_CODE_LINE='AWAITING_SHIPPING'
+AND  oic_interface_id=P_OIC_INTERFACE_ID;
+
+
+type c_cancel_rec is table of C_CANCEL_LINES%rowtype index by pls_integer;
+r_cancel c_cancel_rec;
+
+
+BEGIN
+
+DBMS_OUTPUT.PUT_LINE('Starting of script');
+
+-- Setting the Enviroment --
+
+mo_global.init('ONT');
+fnd_global.apps_initialize ( user_id      => 1014843
+                            ,resp_id      =>  21623
+                            ,resp_appl_id => 660);
+mo_global.set_policy_context('S',204);
+
+
+OPEN C_CANCEL_LINES;
+LOOP
+
+fetch C_CANCEL_LINES bulk collect into r_cancel limit 500;
+ FOR i in 1..r_cancel.count 
+ LOOP
+
+v_action_request_tbl (1) := oe_order_pub.g_miss_request_rec;
+
+-- Cancel a Line Record --
+v_line_tbl (1)                      := oe_order_pub.g_miss_line_rec;
+v_line_tbl (1).operation            := OE_GLOBALS.G_OPR_UPDATE;
+v_line_tbl (1).header_id            := r_cancel(I).ORDER_HEADER_ID;
+v_line_tbl (1).line_id              := r_cancel(I).LINE_ID;
+v_line_tbl (1).ordered_quantity     := r_cancel(I).ordered_quantity;
+v_line_tbl (1).cancelled_flag       := r_cancel(I).cancel_flag;
+v_line_tbl (1).change_reason        := 'Not Provided';
+
+DBMS_OUTPUT.PUT_LINE('Starting of API');
+
+-- Calling the API to cancel a line from an Existing Order --
+
+OE_ORDER_PUB.PROCESS_ORDER (
+p_api_version_number            => v_api_version_number
+, p_header_rec                  => v_header_rec
+, p_line_tbl                    => v_line_tbl
+, p_action_request_tbl          => v_action_request_tbl
+, p_line_adj_tbl                => v_line_adj_tbl
+-- OUT variables
+, x_header_rec                  => v_header_rec_out
+, x_header_val_rec              => v_header_val_rec_out
+
+, x_header_adj_tbl              => v_header_adj_tbl_out
+
+, x_header_adj_val_tbl          => v_header_adj_val_tbl_out
+, x_header_price_att_tbl        => v_header_price_att_tbl_out
+, x_header_adj_att_tbl          => v_header_adj_att_tbl_out
+, x_header_adj_assoc_tbl        => v_header_adj_assoc_tbl_out
+, x_header_scredit_tbl          => v_header_scredit_tbl_out
+, x_header_scredit_val_tbl      => v_header_scredit_val_tbl_out
+, x_line_tbl                    => v_line_tbl_out
+, x_line_val_tbl                => v_line_val_tbl_out
+, x_line_adj_tbl                => v_line_adj_tbl_out
+, x_line_adj_val_tbl            => v_line_adj_val_tbl_out
+, x_line_price_att_tbl          => v_line_price_att_tbl_out
+, x_line_adj_att_tbl            => v_line_adj_att_tbl_out
+, x_line_adj_assoc_tbl          => v_line_adj_assoc_tbl_out
+, x_line_scredit_tbl            => v_line_scredit_tbl_out
+, x_line_scredit_val_tbl        => v_line_scredit_val_tbl_out
+, x_lot_serial_tbl              => v_lot_serial_tbl_out
+, x_lot_serial_val_tbl          => v_lot_serial_val_tbl_out
+, x_action_request_tbl          => v_action_request_tbl_out
+, x_return_status               => v_return_status
+, x_msg_count                   => v_msg_count
+, x_msg_data                    => v_msg_data
+);
+COMMIT;
+DBMS_OUTPUT.PUT_LINE('Completion of API');
+
+DBMS_OUTPUT.PUT_LINE('STATUS RETURN IS '||v_return_status);
+IF v_return_status = fnd_api.g_ret_sts_success THEN
+    COMMIT;
+    DBMS_OUTPUT.put_line ('Line Cancelation in Existing Order is Success ');
+ELSE
+    DBMS_OUTPUT.put_line ('Line Cancelation in Existing Order failed:'||v_msg_data);
+    ROLLBACK;
+    FOR i IN 1 .. v_msg_count
+    LOOP
+      v_msg_data := oe_msg_pub.get( p_msg_index => i, p_encoded => 'F');
+      dbms_output.put_line( i|| ') '|| v_msg_data);
+    END LOOP;
+END IF;
+           update_order_cancel_LINES_details(r_cancel(i).order_header_id);
+ 
+   END LOOP;
+        exit when r_cancel.count=0;
+        end loop;
+        close C_CANCEL_LINES;
+EXCEPTION WHEN OTHERS THEN
+DBMS_OUTPUT.PUT_LINE('ERROR OCCURED IN CANCELLING SALES ORDER LINE'||SQLCODE||SQLERRM);
+  
+END SALES_ORDER_CANCEL_LINES;
 
 
 
 
 
---PROCEDURE UPDATE_LINE_QUANTITY(P_OIC_INTERFACE_ID varchar2)
---AS
--- l_header_rec OE_ORDER_PUB.Header_Rec_Type;
--- l_line_tbl OE_ORDER_PUB.Line_Tbl_Type;
--- l_action_request_tbl OE_ORDER_PUB.Request_Tbl_Type;
--- l_header_adj_tbl OE_ORDER_PUB.Header_Adj_Tbl_Type;
--- l_line_adj_tbl OE_ORDER_PUB.line_adj_tbl_Type;
--- l_header_scr_tbl OE_ORDER_PUB.Header_Scredit_Tbl_Type;
--- l_line_scredit_tbl OE_ORDER_PUB.Line_Scredit_Tbl_Type;
--- l_request_rec OE_ORDER_PUB.Request_Rec_Type ;
--- l_return_status VARCHAR2(1000);
--- l_msg_count NUMBER;
--- l_msg_data VARCHAR2(1000);
--- p_api_version_number NUMBER :=1.0;
--- p_init_msg_list VARCHAR2(10) := FND_API.G_FALSE;
--- p_return_values VARCHAR2(10) := FND_API.G_FALSE;
--- p_action_commit VARCHAR2(10) := FND_API.G_FALSE;
--- x_return_status VARCHAR2(1);
--- x_msg_count NUMBER;
--- x_msg_data VARCHAR2(100);
--- p_header_rec OE_ORDER_PUB.Header_Rec_Type := OE_ORDER_PUB.G_MISS_HEADER_REC;
--- p_old_header_rec OE_ORDER_PUB.Header_Rec_Type := OE_ORDER_PUB.G_MISS_HEADER_REC;
--- p_header_val_rec OE_ORDER_PUB.Header_Val_Rec_Type := OE_ORDER_PUB.G_MISS_HEADER_VAL_REC;
--- p_old_header_val_rec OE_ORDER_PUB.Header_Val_Rec_Type := OE_ORDER_PUB.G_MISS_HEADER_VAL_REC;
--- p_Header_Adj_tbl OE_ORDER_PUB.Header_Adj_Tbl_Type := OE_ORDER_PUB.G_MISS_HEADER_ADJ_TBL;
--- p_old_Header_Adj_tbl OE_ORDER_PUB.Header_Adj_Tbl_Type := OE_ORDER_PUB.G_MISS_HEADER_ADJ_TBL;
--- p_Header_Adj_val_tbl OE_ORDER_PUB.Header_Adj_Val_Tbl_Type := OE_ORDER_PUB.G_MISS_HEADER_ADJ_VAL_TBL;
--- p_old_Header_Adj_val_tbl OE_ORDER_PUB.Header_Adj_Val_Tbl_Type := OE_ORDER_PUB.G_MISS_HEADER_ADJ_VAL_TBL;
--- p_Header_price_Att_tbl OE_ORDER_PUB.Header_Price_Att_Tbl_Type := OE_ORDER_PUB.G_MISS_HEADER_PRICE_ATT_TBL;
--- p_old_Header_Price_Att_tbl OE_ORDER_PUB.Header_Price_Att_Tbl_Type := OE_ORDER_PUB.G_MISS_HEADER_PRICE_ATT_TBL;
--- p_Header_Adj_Att_tbl OE_ORDER_PUB.Header_Adj_Att_Tbl_Type :=  OE_ORDER_PUB.G_MISS_HEADER_ADJ_ATT_TBL;
--- p_old_Header_Adj_Att_tbl OE_ORDER_PUB.Header_Adj_Att_Tbl_Type := OE_ORDER_PUB.G_MISS_HEADER_ADJ_ATT_TBL;
--- p_Header_Adj_Assoc_tbl OE_ORDER_PUB.Header_Adj_Assoc_Tbl_Type := OE_ORDER_PUB.G_MISS_HEADER_ADJ_ASSOC_TBL;
--- p_old_Header_Adj_Assoc_tbl OE_ORDER_PUB.Header_Adj_Assoc_Tbl_Type := OE_ORDER_PUB.G_MISS_HEADER_ADJ_ASSOC_TBL;
--- p_Header_Scredit_tbl OE_ORDER_PUB.Header_Scredit_Tbl_Type := OE_ORDER_PUB.G_MISS_HEADER_SCREDIT_TBL;
--- p_old_Header_Scredit_tbl OE_ORDER_PUB.Header_Scredit_Tbl_Type := OE_ORDER_PUB.G_MISS_HEADER_SCREDIT_TBL;
--- p_Header_Scredit_val_tbl OE_ORDER_PUB.Header_Scredit_Val_Tbl_Type := OE_ORDER_PUB.G_MISS_HEADER_SCREDIT_VAL_TBL;
--- p_old_Header_Scredit_val_tbl OE_ORDER_PUB.Header_Scredit_Val_Tbl_Type := OE_ORDER_PUB.G_MISS_HEADER_SCREDIT_VAL_TBL;
--- p_line_tbl OE_ORDER_PUB.Line_Tbl_Type := OE_ORDER_PUB.G_MISS_LINE_TBL;
--- p_old_line_tbl OE_ORDER_PUB.Line_Tbl_Type := OE_ORDER_PUB.G_MISS_LINE_TBL;
--- p_line_val_tbl OE_ORDER_PUB.Line_Val_Tbl_Type :=  OE_ORDER_PUB.G_MISS_LINE_VAL_TBL;
--- p_old_line_val_tbl OE_ORDER_PUB.Line_Val_Tbl_Type := OE_ORDER_PUB.G_MISS_LINE_VAL_TBL;
--- p_Line_Adj_tbl OE_ORDER_PUB.Line_Adj_Tbl_Type := OE_ORDER_PUB.G_MISS_LINE_ADJ_TBL;
--- p_old_Line_Adj_tbl OE_ORDER_PUB.Line_Adj_Tbl_Type := OE_ORDER_PUB.G_MISS_LINE_ADJ_TBL;
--- p_Line_Adj_val_tbl OE_ORDER_PUB.Line_Adj_Val_Tbl_Type := OE_ORDER_PUB.G_MISS_LINE_ADJ_VAL_TBL;
--- p_old_Line_Adj_val_tbl OE_ORDER_PUB.Line_Adj_Val_Tbl_Type := OE_ORDER_PUB.G_MISS_LINE_ADJ_VAL_TBL;
--- p_Line_price_Att_tbl OE_ORDER_PUB.Line_Price_Att_Tbl_Type := OE_ORDER_PUB.G_MISS_LINE_PRICE_ATT_TBL;
--- p_old_Line_Price_Att_tbl OE_ORDER_PUB.Line_Price_Att_Tbl_Type := OE_ORDER_PUB.G_MISS_LINE_PRICE_ATT_TBL;
--- p_Line_Adj_Att_tbl OE_ORDER_PUB.Line_Adj_Att_Tbl_Type := OE_ORDER_PUB.G_MISS_LINE_ADJ_ATT_TBL;
--- p_old_Line_Adj_Att_tbl OE_ORDER_PUB.Line_Adj_Att_Tbl_Type := OE_ORDER_PUB.G_MISS_LINE_ADJ_ATT_TBL;
--- p_Line_Adj_Assoc_tbl OE_ORDER_PUB.Line_Adj_Assoc_Tbl_Type := OE_ORDER_PUB.G_MISS_LINE_ADJ_ASSOC_TBL;
--- p_old_Line_Adj_Assoc_tbl OE_ORDER_PUB.Line_Adj_Assoc_Tbl_Type := OE_ORDER_PUB.G_MISS_LINE_ADJ_ASSOC_TBL;
--- p_Line_Scredit_tbl OE_ORDER_PUB.Line_Scredit_Tbl_Type := OE_ORDER_PUB.G_MISS_LINE_SCREDIT_TBL;
--- p_old_Line_Scredit_tbl OE_ORDER_PUB.Line_Scredit_Tbl_Type := OE_ORDER_PUB.G_MISS_LINE_SCREDIT_TBL;
--- p_Line_Scredit_val_tbl OE_ORDER_PUB.Line_Scredit_Val_Tbl_Type := OE_ORDER_PUB.G_MISS_LINE_SCREDIT_VAL_TBL;
--- p_old_Line_Scredit_val_tbl OE_ORDER_PUB.Line_Scredit_Val_Tbl_Type := OE_ORDER_PUB.G_MISS_LINE_SCREDIT_VAL_TBL;
--- p_Lot_Serial_tbl OE_ORDER_PUB.Lot_Serial_Tbl_Type := OE_ORDER_PUB.G_MISS_LOT_SERIAL_TBL;
--- p_old_Lot_Serial_tbl OE_ORDER_PUB.Lot_Serial_Tbl_Type := OE_ORDER_PUB.G_MISS_LOT_SERIAL_TBL;
--- p_Lot_Serial_val_tbl OE_ORDER_PUB.Lot_Serial_Val_Tbl_Type := OE_ORDER_PUB.G_MISS_LOT_SERIAL_VAL_TBL;
--- p_old_Lot_Serial_val_tbl OE_ORDER_PUB.Lot_Serial_Val_Tbl_Type := OE_ORDER_PUB.G_MISS_LOT_SERIAL_VAL_TBL;
--- p_action_request_tbl OE_ORDER_PUB.Request_Tbl_Type := OE_ORDER_PUB.G_MISS_REQUEST_TBL;
---
--- x_header_rec OE_ORDER_PUB.Header_Rec_Type;
--- x_action_request_tbl OE_ORDER_PUB.Request_Tbl_Type;
--- x_header_val_rec OE_ORDER_PUB.Header_Val_Rec_Type;
--- x_Header_Adj_tbl OE_ORDER_PUB.Header_Adj_Tbl_Type;
--- x_Header_Adj_val_tbl OE_ORDER_PUB.Header_Adj_Val_Tbl_Type;
--- x_Header_price_Att_tbl OE_ORDER_PUB.Header_Price_Att_Tbl_Type;
--- x_Header_Adj_Att_tbl OE_ORDER_PUB.Header_Adj_Att_Tbl_Type;
--- x_Header_Adj_Assoc_tbl OE_ORDER_PUB.Header_Adj_Assoc_Tbl_Type;
--- x_Header_Scredit_tbl OE_ORDER_PUB.Header_Scredit_Tbl_Type;
--- x_Header_Scredit_val_tbl OE_ORDER_PUB.Header_Scredit_Val_Tbl_Type;
--- x_line_val_tbl OE_ORDER_PUB.Line_Val_Tbl_Type;
--- x_Line_Adj_tbl OE_ORDER_PUB.Line_Adj_Tbl_Type;
--- x_Line_Adj_val_tbl OE_ORDER_PUB.Line_Adj_Val_Tbl_Type;
--- x_Line_price_Att_tbl OE_ORDER_PUB.Line_Price_Att_Tbl_Type;
--- x_Line_Adj_Att_tbl OE_ORDER_PUB.Line_Adj_Att_Tbl_Type;
--- x_Line_Adj_Assoc_tbl OE_ORDER_PUB.Line_Adj_Assoc_Tbl_Type;
--- x_Line_Scredit_tbl OE_ORDER_PUB.Line_Scredit_Tbl_Type;
--- x_line_tbl OE_ORDER_PUB.Line_Tbl_Type ;
--- x_Line_Scredit_val_tbl OE_ORDER_PUB.Line_Scredit_Val_Tbl_Type;
--- x_Lot_Serial_tbl OE_ORDER_PUB.Lot_Serial_Tbl_Type;
--- x_Lot_Serial_val_tbl OE_ORDER_PUB.Lot_Serial_Val_Tbl_Type;
--- x_action_request_tbl OE_ORDER_PUB.Request_Tbl_Type;
--- X_DEBUG_FILE VARCHAR2(100);
--- l_line_tbl_index NUMBER;
--- l_msg_index_out NUMBER(10);
---CURSOR C_UPDATE_LINE
---IS 
---SELECT LINE_ID,LINE_NUMBER,ORDER_HEADER_ID ,change_reason
---FROM XXAWR_STAGING_LINE_SO
---WHERE STATUS_MSG='B' 
---AND OIC_INTERFACE_ID=P_OIC_INTERFACE_ID
---;
---
---
---TYPE C_UPDATE_REC IS TABLE OF C_UPDATE_LINE%ROWTYPE INDEX BY PLS_INTEGER;
---R_UPDATE C_UPDATE_REC;
---
---
---
---BEGIN
--- dbms_output.enable(1000000);
---
---mo_global.init ('ONT');
---MO_GLOBAL.SET_POLICY_CONTEXT('S',204);
--- FND_GLOBAL.APPS_INITIALIZE(1014843,21623,660);
--- oe_msg_pub.initialize;
--- oe_debug_pub.initialize;
--- X_DEBUG_FILE := OE_DEBUG_PUB.Set_Debug_Mode('FILE');
--- oe_debug_pub.SetDebugLevel(5); -- Use 5 for the most debuging output, I warn  you its a lot of data
--- dbms_output.put_line('START OF NEW DEBUG');
--- OPEN C_UPDATE_LINE;
---
--- LOOP
---
--- FETCH C_UPDATE_LINE BULK COLLECT INTO R_UPDATE LIMIT 500;
---
---FOR I IN 1..R_UPDATE.COUNT
---LOOP
-----This is to UPDATE order line
--- l_line_tbl_index :=R_UPDATE(I).LINE_NUMBER;
----- Changed attributes
--- l_line_tbl(l_line_tbl_index) := OE_ORDER_PUB.G_MISS_LINE_REC;
--- l_line_tbl(l_line_tbl_index).ordered_quantity := 6;
----- Primary key of the entity i.e. the order line
--- l_line_tbl(l_line_tbl_index).line_id := R_UPDATE(I).LINE_ID;
--- l_line_tbl(l_line_tbl_index).change_reason := R_UPDATE(I).CHANGE_REASON;
----- Indicates to process order that this is an update operation
--- l_line_tbl(l_line_tbl_index).operation := OE_GLOBALS.G_OPR_UPDATE;
--- -- CALL TO PROCESS ORDER
--- OE_ORDER_PUB.process_order (
---  p_api_version_number => 1.0
---  , p_init_msg_list => fnd_api.g_false
---  , p_return_values => fnd_api.g_false
---  , p_action_commit => fnd_api.g_false
---  , x_return_status => l_return_status
---  , x_msg_count => l_msg_count
---  , x_msg_data => l_msg_data
---  , p_header_rec => l_header_rec
---  , p_line_tbl => l_line_tbl
---  , p_action_request_tbl => l_action_request_tbl
----- OUT PARAMETERS
---  , x_header_rec => x_header_rec
---  , x_header_val_rec => x_header_val_rec
---  , x_Header_Adj_tbl => x_Header_Adj_tbl
---  , x_Header_Adj_val_tbl => x_Header_Adj_val_tbl
---  , x_Header_price_Att_tbl => x_Header_price_Att_tbl
---  , x_Header_Adj_Att_tbl => x_Header_Adj_Att_tbl
---  , x_Header_Adj_Assoc_tbl => x_Header_Adj_Assoc_tbl
---  , x_Header_Scredit_tbl => x_Header_Scredit_tbl
---  , x_Header_Scredit_val_tbl => x_Header_Scredit_val_tbl
---  , x_line_tbl => x_line_tbl
---  , x_line_val_tbl => x_line_val_tbl
---  , x_Line_Adj_tbl => x_Line_Adj_tbl
---  , x_Line_Adj_val_tbl => x_Line_Adj_val_tbl
---  , x_Line_price_Att_tbl => x_Line_price_Att_tbl
---  , x_Line_Adj_Att_tbl => x_Line_Adj_Att_tbl
---  , x_Line_Adj_Assoc_tbl => x_Line_Adj_Assoc_tbl
---  , x_Line_Scredit_tbl => x_Line_Scredit_tbl
---  , x_Line_Scredit_val_tbl => x_Line_Scredit_val_tbl
---  , x_Lot_Serial_tbl => x_Lot_Serial_tbl
---  , x_Lot_Serial_val_tbl => x_Lot_Serial_val_tbl
---  , x_action_request_tbl => p_action_request_tbl
--- );
---COMMIT;
---  dbms_output.put_line('OM Debug file: ' ||oe_debug_pub.G_DIR||'/'||oe_debug_pub.G_FILE);
---
----- Retrieve messages
---  FOR i IN 1 .. l_msg_count
---  LOOP
---   Oe_Msg_Pub.get( p_msg_index => i
---   , p_encoded => Fnd_Api.G_FALSE
---   , p_data => l_msg_data
---   , p_msg_index_out => l_msg_index_out);
---   DBMS_OUTPUT.PUT_LINE('message is: ' || l_msg_data);
---   DBMS_OUTPUT.PUT_LINE('message index is: ' || l_msg_index_out);
---  END LOOP;
----- Check the return status
---  IF l_return_status = FND_API.G_RET_STS_SUCCESS
---  THEN
---   dbms_output.put_line('Line Quantity Update Sucessful');
---  ELSE
---   dbms_output.put_line('Line Quantity update Failed');
---  END IF;
---  update_LINE_details (R_UPDATE(I).LINE_ID,R_UPDATE(I).LINE_NUMBER,R_UPDATE(I).ORDER_HEADER_ID);
---
---END LOOP;
---
---EXIT WHEN R_UPDATE.COUNT=0;
---END LOOP;
---CLOSE C_UPDATE_LINE;
---
---EXCEPTION WHEN OTHERS THEN
---DBMS_OUTPUT.PUT_LINE('ERROR OCCURED CANNOT UPDATE LINE QUANTITY '||SQLCODE||SQLERRM);
---
---
---END UPDATE_LINE_QUANTITY;
---
+
+
 
     /*******************************************************************************************************************
     * Program Name   : SALES_ORDER_CANCEL
@@ -1682,63 +1625,69 @@ ship from Org
         dbms_output.put_line('exit hua header and line k validation say');
     END xxawr_staging_validation;
 
+
+
+
+
     PROCEDURE MAIN_PROCEDURE (
---        p_errbuff     OUT VARCHAR2,
---        p_retcode     OUT VARCHAR2,
-      --  p_action_type IN VARCHAR2,
         p_OIC_interface_id IN NUMBER
     ) IS
 ln_count number;
-ln_count1 number;
+LC_STATUS VARCHAR2(240);
+LN_COUNT1 NUMBER;
     BEGIN
-
 
 --VALIDATION FOR STAGING TABLE     
       xxawr_staging_validation;
 
 
-begin
-select count(1) into ln_count  from XXAWR_STAGING_LINE_SO
-where OIC_INTERFACE_ID=p_OIC_interface_id
-and upper(FLOW_STATUS_CODE_LINE)=upper('AWAITING_SHIPPING')
-and upper(cancel_flag)='Y';
-if ln_count>0
-then  
-dbms_output.put_line('line id is '||ln_count);
-            sales_order_cancel(P_OIC_INTERFACE_ID);
---else
---BEGIN
---select  distinct count(1) 
---into ln_count1
---from XXAWR_STAGING_LINE_SO
----- where SF_ORDER_NUMBER in (select SF_ORDER_NUMBER from XXAWR_STAGING_LINE_SO 
--- where oic_interface_id=P_OIC_INTERFACE_ID
--- and change_reason is not null
--- AND STATUS_MSG='B'
--- ;
---dbms_output.put_line('count is '||ln_count1);
---dbms_output.put_line('interface id '||P_OIC_INTERFACE_ID);
---
---if ln_count1>0 THEN
---dbms_output.put_line('update sa phlay');
---  UPDATE_LINE_QUANTITY(P_OIC_INTERFACE_ID);
---
---dbms_output.put_line('update sa bad');
 
-ELSE
+select STATUS into LC_STATUS  from XXAWR_STAGING_HEADER_SO
+where OIC_INTERFACE_ID=p_OIC_interface_id;
 
-dbms_output.put_line('sales order sat phlay sa phlay');
+IF LC_STATUS='DRAFT'
+THEN
+sales_order_creation(P_OIC_INTERFACE_ID);
+ELSIF LC_STATUS='BOOK'
+THEN
+       sales_order_creation(P_OIC_INTERFACE_ID);
+       SALES_ORDER_BOOKING(P_OIC_INTERFACE_ID);
+ELSIF LC_STATUS='CANCEL'
 
+
+THEN
        sales_order_creation(P_OIC_INTERFACE_ID);
        SALES_ORDER_BOOKING(P_OIC_INTERFACE_ID);
 
+begin
 
-end if;
+SELECT  COUNT(DISTINCT ORDER_HEADER_ID) INTO LN_COUNT1
+FROM XXAWR_STAGING_HEADER_SO
+WHERE OIC_INTERFACE_ID=p_OIC_interface_id
+AND FLOW_STATUS_CODE_HDR='BOOKED';
+IF LN_COUNT1>0
+THEN
+            sales_order_cancel(P_OIC_INTERFACE_ID);
+            END IF;
+            END ;
+            
+            end if;
+            
+begin
 
-END;
+select COUNT(DISTINCT order_header_id) into ln_count
+from  XXAWR_STAGING_LINE_SO where UPPER(status)='CANCEL_LINE' AND 
+UPPER(CANCEL_FLAG)='Y' 
+AND FLOW_STATUS_CODE_LINE='AWAITING_SHIPPING';
+IF LN_COUNT>0
+THEN
+dbms_output.put_line('line id is '||ln_count);
+            SALES_ORDER_CANCEL_LINES(P_OIC_INTERFACE_ID);
+END IF;
+END ;
+
 --END IF;
---END; 
-  
+
     END MAIN_PROCEDURE;
 
 END XXAWR_SALES_ORDER_PACKAGE_INTG;
