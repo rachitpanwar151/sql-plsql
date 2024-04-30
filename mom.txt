@@ -1,0 +1,31 @@
+Minutes Of Meeting
+
+
+Q1) semi finished goods not to be assigned in price list
+
+1) customer ordered enable flag should be y in both system
+2) purchasable item flag shoulbe y in both system for manufacturing
+
+3) New item will take template and register in price list
+
+4)we have to sync both system . salesforce can create item at semifinished goods because those are required for creation
+of wo . both but those items are not required for creation of sales order .those items are not purchasable .
+
+5) propose the attribute if purchasable is enable only those item will be available for procurement in salesforce
+if its enable only sales 
+if its for bom and wo enlabe it for creation
+
+
+Q2) SO header and line level discount
+
+1)percentage based modifier or amount based modifier(for line or header level)
+            
+			 we need to finalise with business to finalise discount
+			 
+			 
+conclusion
+
+1)purchasable , salable flag we will extract data and outbound and salesforce accoordingly there things is because 
+sf is the place for enablary
+
+2) we will have a call to business for discount

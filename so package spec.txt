@@ -1,0 +1,46 @@
+CREATE OR REPLACE PACKAGE APPS.XXAWR_SO_SF_OIC_PKG AS
+   /*******************************************************************************************************************
+    * $Header         : @(#)
+    * Program Name    : XXAWR_SALES_ORDER_PACKAGE.pks
+    * Language        : PL/SQL
+    * Description     : PACKAGE BODY FOR AWR SALES ORDER 
+    * 
+    * History         :
+    *
+    * WHO              WHAT                                                     WHEN
+    * --------------   -------------------------------------------------           --------------
+    *                   1.0 - AWR SO SPEC                                             2024
+    *******************************************************************************************************************/
+
+   /********** DECLARING INITIALIZING GLOBAL VARIABLES ******************/
+    --
+    g_org_id hr_all_organization_units.organization_id%type;
+    g_user_id fnd_user.user_id%type;
+    g_resp_app_id fnd_responsibility_tl.application_id%type;
+    g_resp_id fnd_responsibility_tl.responsibility_id%type;
+    g_resp_app_id1 fnd_responsibility_tl.application_id%type;
+    g_resp_id1 fnd_responsibility_tl.responsibility_id%type;
+    g_inv_org_id org_organization_definitions.organization_id%type;
+    g_organization_name org_organization_definitions.organization_name%type;
+    g_integration_name VARCHAR2(20):= 'SALESORDER';
+    g_debug_flag varchar2(200);
+    --
+
+    
+    /**************************************************************************************************
+    * Program Name   : MAIN_PROCEDURE
+    * Language       : PL/SQL
+    * Description    : Procedure MAIN PROCEDURE
+    * History        :
+    * WHO              WHAT                                                        WHEN
+    * --------------   -------------------------------------------------------     --------------
+    *                  DRAFT 1.0 IE MAIN PROGRAM DECLERATION IN SPEC               2024   
+    ****************************************************************************************************/
+
+    PROCEDURE MAIN (
+        IN_P_OIC_INSTANCE_ID IN VARCHAR2,
+        OUT_P_STATUS     OUT VARCHAR2,
+        OUT_P_ERROR_MESSAGE OUT VARCHAR2
+    );
+
+END XXAWR_SO_SF_OIC_PKG;
